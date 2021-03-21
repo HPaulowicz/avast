@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ElementType } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { Table, Button, Typography } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
@@ -129,7 +129,7 @@ class Home extends React.Component<IProps, IState> {
         ];
     };
 
-    onSortEnd({ oldIndex, newIndex }: any) {
+    onSortEnd({ oldIndex, newIndex }: any): void {
         const { dataSource } = this.state;
         if (oldIndex !== newIndex) {
             const newData = arrayMove([].concat(dataSource as any), oldIndex, newIndex).filter(el => !!el);
@@ -138,28 +138,30 @@ class Home extends React.Component<IProps, IState> {
         }
     }
 
-    onSelectChange(selectedRowKeys: any) {
+    onSelectChange(selectedRowKeys: any): void {
         console.log('selectedRowKeys changed: ', selectedRowKeys);
         this.setState({ selectedRowKeys });
     }
 
-    deleteRows() {
+    deleteRows(): void {
         const { dataSource, selectedRowKeys } = this.state;
         const newData = dataSource.filter((_, index: number) => !selectedRowKeys.includes(index.toString()));
         this.setState({ selectedRowKeys: [], dataSource: newData });
     }
 
-    DraggableContainer = (props: IProps) => (
-        <CSortableContainer
+    DraggableContainer(props: IProps) {
+        return (<CSortableContainer
             useDragHandle
             disableAutoscroll
             helperClass='row-dragging'
-            onSortEnd={(...args: any) => this.onSortEnd(args)}
+            onSortEnd={({ oldIndex, newIndex }: any) => this.onSortEnd({ oldIndex, newIndex })}
             {...props}
-        />
-    );
+        />);
+    }
 
-    DraggableBodyRow = ({ className, style, ...restProps }: any) => (<CSortableItem index={restProps['data-row-key']} {...restProps} />);
+    DraggableBodyRow({ className, style, ...restProps }: any) {
+        return (<CSortableItem index={restProps['data-row-key']} {...restProps} />);
+    }
 
     render() {
         const { dataSource, selectedRowKeys } = this.state;
@@ -187,8 +189,8 @@ class Home extends React.Component<IProps, IState> {
                     rowSelection={rowSelection}
                     components={{
                         body: {
-                            wrapper: this.DraggableContainer,
-                            row: this.DraggableBodyRow,
+                            wrapper: (props: IProps) => this.DraggableContainer(props),
+                            row: (props: IProps) => this.DraggableBodyRow(props),
                         },
                     }}
                 />
