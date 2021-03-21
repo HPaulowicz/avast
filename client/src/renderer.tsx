@@ -6,10 +6,8 @@ import 'antd/dist/antd.css';
 import App from '@/app/app';
 
 ReactDOM.render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>
-    </React.StrictMode>,
+    <BrowserRouter>
+        <App />
+    </BrowserRouter>,
     document.getElementById('root')
 );

@@ -4,78 +4,130 @@ import { Table } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
 import { MenuOutlined } from '@ant-design/icons';
 import arrayMove from 'array-move';
+import ReactJson from 'react-json-view';
 
-interface IProps extends RouteComponentProps {};
+import * as dataJSON from '../../../assets/task.recording.json';
+
+interface IRecord {
+    event: {
+        type: string,
+    },
+    setup?: {
+        attributes?: {
+            title?: string,
+            autofocus?: string,
+            class?: string,
+            id?: string,
+            name?: string,
+            placeholder?: string,
+            'rcrdr-extra-style'?: {
+                display?: string,
+                visibility?: string,
+                [key: string]: any,
+            },
+            required?: string,
+            type?: string,
+            pattern?: string,
+            value?: string,
+            tabindex?: string,
+            href?: string,
+            role?: string,
+            alt?: string,
+            height?: string,
+            src?: string,
+            srcset?: string,
+            width?: string,
+            'data-sc-fieldtype'?: string,
+            'data-sc-fieldtype-id'?: string,
+            'data-target'?: string,
+            'data-action'?: string,
+            'data-validation-name'?: string,
+            'data-behavior'?: string,
+            'data-appearing-on'?: string,
+            'data-bucket-id'?: string,
+            'data-bucket-url'?: string,
+            'data-role'?: string,
+            'data-disable-with'?: string,
+            'aria-haspopup'?: boolean,
+            'aria-label'?: string,
+            'data-current-person-avatar'?: boolean,
+            [key: string]: any,
+        },
+        description?: string,
+        name?: string,
+        type?: string,
+        url?: string,
+        altPath?: string,
+        altSelector?: string,
+        computedRole?: string,
+        frame?: string,
+        frame_id?: string,
+        html?: string,
+        nodeName?: string,
+        nodeType?: string,
+        rootpath?: string,
+        selector?: string,
+        xpath?: string,
+        maxLength?: number,
+        minLength?: number,
+        pattern?: string,
+        value?: string,
+        required?: boolean,
+        [key: string]: any,
+    },
+    time: number,
+};
+
+interface IProps extends RouteComponentProps { };
 interface IState {
-    dataSource: any,
+    dataSource: IRecord[],
 };
 
 const DragHandle = SortableHandle(() => <MenuOutlined style={{ cursor: 'grab', color: '#999' }} />);
-
-const columns = [
-    {
-        title: 'Sort',
-        dataIndex: 'sort',
-        width: 30,
-        className: 'drag-visible',
-        render: () => <DragHandle />,
-    },
-    {
-        title: 'Name',
-        dataIndex: 'name',
-        className: 'drag-visible',
-    },
-    {
-        title: 'Age',
-        dataIndex: 'age',
-    },
-    {
-        title: 'Address',
-        dataIndex: 'address',
-    },
-];
-
-const data = [
-    {
-        key: '1',
-        name: 'John Brown',
-        age: 32,
-        address: 'New York No. 1 Lake Park',
-        index: 0,
-    },
-    {
-        key: '2',
-        name: 'Jim Green',
-        age: 42,
-        address: 'London No. 1 Lake Park',
-        index: 1,
-    },
-    {
-        key: '3',
-        name: 'Joe Black',
-        age: 32,
-        address: 'Sidney No. 1 Lake Park',
-        index: 2,
-    },
-];
-
 const CSortableItem = SortableElement((props: any) => <tr {...props} />);
 const CSortableContainer = SortableContainer((props: any) => <tbody {...props} />);
 
 class Home extends React.Component<IProps, IState> {
+    private columns: any;
 
     constructor(props: IProps) {
         super(props);
 
         this.state = {
-            dataSource: data,
+            dataSource: dataJSON.records as IRecord[],
         };
-    }
+
+        this.columns = [
+            {
+                title: '',
+                dataIndex: 'sort',
+                width: 30,
+                className: 'drag-visible',
+                render: () => <DragHandle />,
+            },
+            {
+                title: 'Event',
+                dataIndex: 'event',
+                className: 'drag-visible',
+                render: ({ type }: IRecord['event']) => type,
+            },
+            {
+                title: 'Timestamp',
+                dataIndex: 'time',
+                render: (time: IRecord['time']) => time,
+            },
+            {
+                title: 'Event data',
+                dataIndex: 'setup',
+                render: (setup: IRecord['setup']) => <ReactJson src={setup || {}} theme='monokai' collapsed={true} />,
+            },
+        ];
+    };
 
     onSortEnd = ({ oldIndex, newIndex }: any) => {
         const { dataSource } = this.state;
         if (oldIndex !== newIndex) {
-            const newData = arrayMove([].concat(dataSource), oldIndex, newIndex).filter(el => !!el);
+            const newData = arrayMove([].concat(dataSource as any), oldIndex, newIndex).filter(el => !!el);
             console.log('Sorted items: ', newData);
             this.setState({ dataSource: newData });
         }
@@ -85,28 +137,24 @@ class Home extends React.Component<IProps, IState> {
         <CSortableContainer
             useDragHandle
             disableAutoscroll
-            helperClass="row-dragging"
+            helperClass='row-dragging'
             onSortEnd={this.onSortEnd}
             {...props}
         />
     );
 
-    DraggableBodyRow = ({ className, style, ...restProps }: any) => {
-        const { dataSource } = this.state;
-        // function findIndex base on Table rowKey props and should always be a right array index
-        const index = dataSource.findIndex((x: any) => x.index === restProps['data-row-key']);
-        return <CSortableItem index={index} {...restProps} />;
-    };
+    DraggableBodyRow = ({ className, style, ...restProps }: any) => (<CSortableItem index={restProps['data-row-key']} {...restProps} />);
 
     render() {
         const { dataSource } = this.state;
 
         return (
+        <>    
             <Table
                 pagination={false}
                 dataSource={dataSource}
-                columns={columns}
-                rowKey="index"
+                columns={this.columns}
+                rowKey={(_, index) => `${index}`}
                 components={{
                     body: {
                         wrapper: this.DraggableContainer,
@@ -114,6 +162,7 @@ class Home extends React.Component<IProps, IState> {
                     },
                 }}
             />
+        </>
         );
     }
 }
