@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import isDev from 'electron-is-dev';
+import { TrayMenu } from '@/electron/TrayMenu';
 
 const createWindow = (): void => {
     const win = new BrowserWindow({
@@ -10,7 +11,6 @@ const createWindow = (): void => {
         }
     });
 
-    console.assert(isDev === false, 'Running in the dev mode');
     win.loadURL(
         isDev
             ? 'http://localhost:9000'
@@ -18,4 +18,12 @@ const createWindow = (): void => {
     );
 };
 
-app.on('ready', createWindow);
+const appElements: any = {
+    tray: null,
+    windows: null
+};
+
+app.on('ready', () => {
+    appElements.tray = new TrayMenu();
+    appElements.windows = createWindow();
+});
