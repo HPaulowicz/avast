@@ -1,11 +1,27 @@
 import React from 'react';
+import {
+    BrowserRouter as Router,
+    Switch,
+    Route,
+    withRouter,
+    RouteComponentProps,
+} from 'react-router-dom';
 
-const App = () => {
-    return (
-        <div className="app">
-            <h1>I'm React running in Electron App!!</h1>
-        </div>
-    );
+import NotFound from './views/NotFound';
+import Home from './views/Home';
+
+class App extends React.Component<RouteComponentProps> {
+    render() {
+        return (
+            <Router>
+                <Switch>
+                    <Route exact path='/' component={Home} />
+                    {/* <Route exact path='/signin' component={Signin} /> */}
+                    <Route component={NotFound} />
+                </Switch>
+            </Router>
+        );
+    }
 }
 
-export default App;
+export default withRouter(App);

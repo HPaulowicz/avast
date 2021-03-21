@@ -1,4 +1,4 @@
-import { app, Tray, Menu, nativeImage } from 'electron';
+import { app, Tray, Menu, nativeImage, dialog } from 'electron';
 
 export class TrayMenu {
     public readonly tray: Tray;
@@ -22,7 +22,16 @@ export class TrayMenu {
             {
                 label: 'About',
                 type: 'normal',
-                click: () => {}
+                click: () => {
+                    dialog.showMessageBox({
+                        type: 'info',
+                        buttons: ['Got it'],
+                        defaultId: 1,
+                        title: 'Info',
+                        message: 'What is this app?',
+                        detail: 'Avast engineering assessment.'
+                    });
+                }
             },
             {
                 label: 'Quit',

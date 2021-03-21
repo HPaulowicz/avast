@@ -15,7 +15,7 @@ module.exports = {
         alias: {
             ['@']: path.resolve(__dirname, 'src')
         },
-        extensions: ['.tsx', '.ts', '.js'],
+        extensions: ['.tsx', '.ts', '.js', '.css'],
     },
     module: {
         rules: [
@@ -31,7 +31,22 @@ module.exports = {
                     'css-loader',
                     'sass-loader',
                 ],
-            }
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            sourceMap: true,
+                            modules: {
+                                localIdentName: '[path][name]__[local]',
+                            },
+                        },
+                    },
+                ],
+            },
         ]
     },
     output: {
