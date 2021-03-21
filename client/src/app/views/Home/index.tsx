@@ -1,12 +1,15 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router-dom';
-import { Table } from 'antd';
+import { Table, Button, Typography } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
 import { MenuOutlined } from '@ant-design/icons';
 import arrayMove from 'array-move';
 import ReactJson from 'react-json-view';
+import moment from 'moment';
 
 import * as dataJSON from '../../../assets/task.recording.json';
+
+const { Text } = Typography;
 
 interface IRecord {
     event: {
@@ -81,6 +84,7 @@ interface IRecord {
 interface IProps extends RouteComponentProps { };
 interface IState {
     dataSource: IRecord[],
+    selectedRowKeys: any[],
 };
 
 const DragHandle = SortableHandle(() => <MenuOutlined style={{ cursor: 'grab', color: '#999' }} />);
@@ -95,6 +99,7 @@ class Home extends React.Component<IProps, IState> {
 
         this.state = {
             dataSource: dataJSON.records as IRecord[],
+            selectedRowKeys: [],
         };
 
         this.columns = [
@@ -114,7 +119,7 @@ class Home extends React.Component<IProps, IState> {
             {
                 title: 'Timestamp',
                 dataIndex: 'time',
-                render: (time: IRecord['time']) => time,
+                render: (time: IRecord['time']) => moment(time).format('L HH:mm:ss SSS'),
             },
             {
                 title: 'Event data',
@@ -124,21 +129,32 @@ class Home extends React.Component<IProps, IState> {
         ];
     };
 
-    onSortEnd = ({ oldIndex, newIndex }: any) => {
+    onSortEnd({ oldIndex, newIndex }: any) {
         const { dataSource } = this.state;
         if (oldIndex !== newIndex) {
             const newData = arrayMove([].concat(dataSource as any), oldIndex, newIndex).filter(el => !!el);
             console.log('Sorted items: ', newData);
             this.setState({ dataSource: newData });
         }
-    };
+    }
+
+    onSelectChange(selectedRowKeys: any) {
+        console.log('selectedRowKeys changed: ', selectedRowKeys);
+        this.setState({ selectedRowKeys });
+    }
+
+    deleteRows() {
+        const { dataSource, selectedRowKeys } = this.state;
+        const newData = dataSource.filter((_, index: number) => !selectedRowKeys.includes(index.toString()));
+        this.setState({ selectedRowKeys: [], dataSource: newData });
+    }
 
     DraggableContainer = (props: IProps) => (
         <CSortableContainer
             useDragHandle
             disableAutoscroll
             helperClass='row-dragging'
-            onSortEnd={this.onSortEnd}
+            onSortEnd={(...args: any) => this.onSortEnd(args)}
             {...props}
         />
     );
@@ -146,23 +162,37 @@ class Home extends React.Component<IProps, IState> {
     DraggableBodyRow = ({ className, style, ...restProps }: any) => (<CSortableItem index={restProps['data-row-key']} {...restProps} />);
 
     render() {
-        const { dataSource } = this.state;
+        const { dataSource, selectedRowKeys } = this.state;
+
+        const rowSelection = {
+            selectedRowKeys,
+            onChange: (keys: any) => this.onSelectChange(keys),
+        };
 
         return (
-        <>    
-            <Table
-                pagination={false}
-                dataSource={dataSource}
-                columns={this.columns}
-                rowKey={(_, index) => `${index}`}
-                components={{
-                    body: {
-                        wrapper: this.DraggableContainer,
-                        row: this.DraggableBodyRow,
-                    },
-                }}
-            />
-        </>
+            <>
+                <Text strong>{selectedRowKeys.length || 0} of {dataSource.length || 0} items selected</Text>
+                <Button
+                    danger
+                    disabled={!selectedRowKeys.length}
+                    onClick={() => this.deleteRows()}
+                >
+                    Delete {selectedRowKeys.length || 0} items
+                </Button>
+                <Table
+                    pagination={false}
+                    dataSource={dataSource}
+                    columns={this.columns}
+                    rowKey={(_, index) => `${index}`}
+                    rowSelection={rowSelection}
+                    components={{
+                        body: {
+                            wrapper: this.DraggableContainer,
+                            row: this.DraggableBodyRow,
+                        },
+                    }}
+                />
+            </>
         );
     }
 }
