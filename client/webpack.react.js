@@ -6,16 +6,14 @@ module.exports = {
     entry: './src/renderer.tsx',
     target: 'electron-renderer',
     devtool: 'source-map',
-    devServer: {
-        contentBase: path.join(__dirname, 'dist/renderer.js'),
-        compress: true,
-        port: 9000
-    },
     resolve: {
         alias: {
             ['@']: path.resolve(__dirname, 'src')
         },
-        extensions: ['.tsx', '.ts', '.js', '.css'],
+        extensions: ['.tsx', '.ts', '.js'],
+    },
+    devServer: {
+        historyApiFallback: true,
     },
     module: {
         rules: [
@@ -29,29 +27,30 @@ module.exports = {
                 use: [
                     'style-loader',
                     'css-loader',
-                    'sass-loader',
+                    'sass'
                 ],
             },
             {
-                test: /\.css$/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            sourceMap: true,
-                            modules: {
-                                localIdentName: '[path][name]__[local]',
-                            },
-                        },
-                    },
-                ],
+                test: /\.less$/i,
+                use: [{
+                    loader: "style-loader"
+                }, {
+                    loader: "css-loader"
+                }, {
+                    loader: "less-loader",
+                    options: {
+                        lessOptions: {
+                            javascriptEnabled: true
+                        }
+                    }
+                }]
             },
         ]
     },
     output: {
         path: __dirname + '/dist',
-        filename: 'renderer.js'
+        filename: 'renderer.js',
+        publicPath: '/'
     },
     plugins: [
         new HtmlWebpackPlugin({

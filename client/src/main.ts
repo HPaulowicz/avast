@@ -4,8 +4,8 @@ import { TrayMenu } from '@/electron/TrayMenu';
 
 const createWindow = (): void => {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 700,
+        height: 700,
         webPreferences: {
             nodeIntegration: true
         }
@@ -13,7 +13,7 @@ const createWindow = (): void => {
 
     win.loadURL(
         isDev
-            ? 'http://localhost:9000'
+            ? 'http://localhost:8080'
             : `file://${app.getAppPath()}/index.html`
     );
 };

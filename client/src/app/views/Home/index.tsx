@@ -1,8 +1,8 @@
-import React, { ElementType } from 'react';
+import React from 'react';
 import { RouteComponentProps } from 'react-router-dom';
-import { Table, Button, Typography } from 'antd';
+import { Table, Button, Typography, Space } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
-import { MenuOutlined } from '@ant-design/icons';
+import { MenuOutlined, CloseOutlined, DownloadOutlined } from '@ant-design/icons';
 import arrayMove from 'array-move';
 import ReactJson from 'react-json-view';
 import moment from 'moment';
@@ -85,6 +85,8 @@ interface IProps extends RouteComponentProps { };
 interface IState {
     dataSource: IRecord[],
     selectedRowKeys: any[],
+    downloadLoading: boolean,
+    dataLoading: boolean,
 };
 
 const DragHandle = SortableHandle(() => <MenuOutlined style={{ cursor: 'grab', color: '#999' }} />);
@@ -100,6 +102,8 @@ class Home extends React.Component<IProps, IState> {
         this.state = {
             dataSource: dataJSON.records as IRecord[],
             selectedRowKeys: [],
+            downloadLoading: false,
+            dataLoading: false,
         };
 
         this.columns = [
@@ -111,20 +115,36 @@ class Home extends React.Component<IProps, IState> {
                 render: () => <DragHandle />,
             },
             {
+                title: 'Type',
+                dataIndex: '',
+                width: 240,
+                render: (record: IRecord) => {
+                    const {
+                        time,
+                        event: {
+                            type
+                        }
+                    } = record;
+                    return (
+                        <Space direction="vertical">
+                            <Text>{type}</Text>
+                            <Text type="secondary">{moment(time).format('L HH:mm:ss SSS')}</Text>
+                        </Space>
+                    );
+                },
+            },
+            {
                 title: 'Event',
-                dataIndex: 'event',
-                className: 'drag-visible',
-                render: ({ type }: IRecord['event']) => type,
-            },
-            {
-                title: 'Timestamp',
-                dataIndex: 'time',
-                render: (time: IRecord['time']) => moment(time).format('L HH:mm:ss SSS'),
-            },
-            {
-                title: 'Event data',
                 dataIndex: 'setup',
-                render: (setup: IRecord['setup']) => <ReactJson src={setup || {}} theme='monokai' collapsed={true} />,
+                width: 430,
+                render: (setup: IRecord['setup']) => {
+                    return (
+                        <Space direction="vertical">
+                            <Text>{setup?.xpath || setup?.url}</Text>
+                            <ReactJson src={setup || {}} theme='rjv-default' collapsed={true} />
+                        </Space>
+                    );
+                }
             },
         ];
     };
@@ -133,13 +153,11 @@ class Home extends React.Component<IProps, IState> {
         const { dataSource } = this.state;
         if (oldIndex !== newIndex) {
             const newData = arrayMove([].concat(dataSource as any), oldIndex, newIndex).filter(el => !!el);
-            console.log('Sorted items: ', newData);
             this.setState({ dataSource: newData });
         }
     }
 
     onSelectChange(selectedRowKeys: any): void {
-        console.log('selectedRowKeys changed: ', selectedRowKeys);
         this.setState({ selectedRowKeys });
     }
 
@@ -147,6 +165,10 @@ class Home extends React.Component<IProps, IState> {
         const { dataSource, selectedRowKeys } = this.state;
         const newData = dataSource.filter((_, index: number) => !selectedRowKeys.includes(index.toString()));
         this.setState({ selectedRowKeys: [], dataSource: newData });
+    }
+
+    downloadJson(): void {
+
     }
 
     DraggableContainer(props: IProps) {
@@ -164,7 +186,7 @@ class Home extends React.Component<IProps, IState> {
     }
 
     render() {
-        const { dataSource, selectedRowKeys } = this.state;
+        const { dataSource, selectedRowKeys, downloadLoading, dataLoading } = this.state;
 
         const rowSelection = {
             selectedRowKeys,
@@ -172,15 +194,38 @@ class Home extends React.Component<IProps, IState> {
         };
 
         return (
-            <>
-                <Text strong>{selectedRowKeys.length || 0} of {dataSource.length || 0} items selected</Text>
-                <Button
-                    danger
-                    disabled={!selectedRowKeys.length}
-                    onClick={() => this.deleteRows()}
-                >
-                    Delete {selectedRowKeys.length || 0} items
-                </Button>
+            <Space direction="vertical">
+                <Space direction="horizontal">
+                    {
+                        selectedRowKeys.length > 0 && 
+                        <>
+                            <Button
+                                type="text"
+                                onClick={() => this.setState({ selectedRowKeys: [] })}
+                                icon={<CloseOutlined />}
+                            />
+                            <Text strong>{selectedRowKeys.length || 0} of {dataSource.length || 0} items selected</Text>
+                            <Button
+                                danger
+                                onClick={() => this.deleteRows()}
+                            >
+                                Delete {selectedRowKeys.length || 0} item(s)
+                            </Button>
+                        </>
+                    }
+                    {
+                        !selectedRowKeys.length && 
+                        <Text strong>{dataSource.length || 0} items</Text>
+                    }
+                    <Button
+                        type="primary"
+                        icon={<DownloadOutlined />}
+                        loading={downloadLoading}
+                        onClick={() => this.downloadJson()}
+                    >
+                        Download
+                    </Button>
+                </Space>
                 <Table
                     pagination={false}
                     dataSource={dataSource}
@@ -193,8 +238,9 @@ class Home extends React.Component<IProps, IState> {
                             row: (props: IProps) => this.DraggableBodyRow(props),
                         },
                     }}
+                    loading={dataLoading}
                 />
-            </>
+            </Space>
         );
     }
 }

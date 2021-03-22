@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
-import 'antd/dist/antd.css';
+import './assets/app.less';
 
 import App from '@/app/app';
 

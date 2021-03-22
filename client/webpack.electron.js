@@ -2,9 +2,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    // Build Mode
     mode: 'development',
-    // Electron Entrypoint
     entry: './src/main.ts',
     target: 'electron-main',
     resolve: {
@@ -31,4 +29,4 @@ module.exports = {
             ],
         }),
     ],
-}
+};
