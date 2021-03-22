@@ -1,15 +1,26 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router-dom';
-import { Table, Button, Typography, Space } from 'antd';
+import { Table, Button, Typography, Space, Drawer, Statistic, Spin } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
-import { MenuOutlined, CloseOutlined, DownloadOutlined } from '@ant-design/icons';
+import { MenuOutlined, CloseOutlined, DownloadOutlined, PieChartTwoTone, DownOutlined, UpOutlined, MediumOutlined } from '@ant-design/icons';
 import arrayMove from 'array-move';
 import ReactJson from 'react-json-view';
 import moment from 'moment';
 
-import * as dataJSON from '../../../assets/task.recording.json';
-
 const { Text } = Typography;
+
+interface IStats {
+    counts: {
+        [key: string]: number,
+    },
+    timing: {
+        min: number,
+        max: number,
+        mean: number,
+    },
+    longestSequence: number,
+    total: number,
+};
 
 interface IRecord {
     event: {
@@ -87,6 +98,9 @@ interface IState {
     selectedRowKeys: any[],
     downloadLoading: boolean,
     dataLoading: boolean,
+    statsLoading: boolean,
+    drawerVisible: boolean,
+    stats?: IStats,
 };
 
 const DragHandle = SortableHandle(() => <MenuOutlined style={{ cursor: 'grab', color: '#999' }} />);
@@ -100,10 +114,13 @@ class Home extends React.Component<IProps, IState> {
         super(props);
 
         this.state = {
-            dataSource: dataJSON.records as IRecord[],
+            dataSource: [],
             selectedRowKeys: [],
             downloadLoading: false,
             dataLoading: false,
+            statsLoading: false,
+            drawerVisible: false,
+            stats: undefined,
         };
 
         this.columns = [
@@ -149,6 +166,27 @@ class Home extends React.Component<IProps, IState> {
         ];
     };
 
+    componentDidMount() {
+        this.setState({
+            dataLoading: true,
+        });
+        fetch('http://localhost:8000/task/recording')
+            .then(res => res.json())
+            .then(
+                (result: IRecord[]) => {
+                    this.setState({
+                        dataLoading: false,
+                        dataSource: result
+                    });
+                },
+                (error) => {
+                    this.setState({
+                        dataLoading: false,
+                    });
+                }
+            );
+    }
+
     onSortEnd({ oldIndex, newIndex }: any): void {
         const { dataSource } = this.state;
         if (oldIndex !== newIndex) {
@@ -171,6 +209,28 @@ class Home extends React.Component<IProps, IState> {
 
     }
 
+    showStats(): void {
+        this.setState({
+            statsLoading: true,
+            drawerVisible: true,
+        });
+        fetch('http://localhost:8000/task/stats')
+            .then(res => res.json())
+            .then(
+                (result: IStats) => {
+                    this.setState({
+                        statsLoading: false,
+                        stats: result
+                    });
+                },
+                (error) => {
+                    this.setState({
+                        statsLoading: false,
+                    });
+                }
+            );
+    }
+
     DraggableContainer(props: IProps) {
         return (<CSortableContainer
             useDragHandle
@@ -186,7 +246,15 @@ class Home extends React.Component<IProps, IState> {
     }
 
     render() {
-        const { dataSource, selectedRowKeys, downloadLoading, dataLoading } = this.state;
+        const {
+            drawerVisible,
+            statsLoading,
+            stats,
+            dataSource,
+            selectedRowKeys,
+            downloadLoading,
+            dataLoading,
+        } = this.state;
 
         const rowSelection = {
             selectedRowKeys,
@@ -194,53 +262,85 @@ class Home extends React.Component<IProps, IState> {
         };
 
         return (
-            <Space direction="vertical">
-                <Space direction="horizontal">
-                    {
-                        selectedRowKeys.length > 0 && 
-                        <>
-                            <Button
-                                type="text"
-                                onClick={() => this.setState({ selectedRowKeys: [] })}
-                                icon={<CloseOutlined />}
-                            />
-                            <Text strong>{selectedRowKeys.length || 0} of {dataSource.length || 0} items selected</Text>
-                            <Button
-                                danger
-                                onClick={() => this.deleteRows()}
-                            >
-                                Delete {selectedRowKeys.length || 0} item(s)
-                            </Button>
-                        </>
-                    }
-                    {
-                        !selectedRowKeys.length && 
-                        <Text strong>{dataSource.length || 0} items</Text>
-                    }
-                    <Button
-                        type="primary"
-                        icon={<DownloadOutlined />}
-                        loading={downloadLoading}
-                        onClick={() => this.downloadJson()}
-                    >
-                        Download
-                    </Button>
+            <>
+                <Space direction="vertical">
+                    <Space direction="horizontal">
+                        {
+                            selectedRowKeys.length > 0 &&
+                            <>
+                                <Button
+                                    type="text"
+                                    onClick={() => this.setState({ selectedRowKeys: [] })}
+                                    icon={<CloseOutlined />}
+                                />
+                                <Text strong>{selectedRowKeys.length || 0} of {dataSource.length || 0} items selected</Text>
+                                <Button
+                                    danger
+                                    onClick={() => this.deleteRows()}
+                                >
+                                    Delete {selectedRowKeys.length || 0} item(s)
+                                </Button>
+                            </>
+                        }
+                        {
+                            !selectedRowKeys.length &&
+                            <Text strong>{dataSource.length || 0} items</Text>
+                        }
+                        <Button
+                            type="primary"
+                            icon={<DownloadOutlined />}
+                            loading={downloadLoading}
+                            onClick={() => this.downloadJson()}
+                        >
+                            SAVE
+                        </Button>
+                        <Button
+                            type="primary"
+                            icon={<PieChartTwoTone />}
+                            loading={downloadLoading}
+                            onClick={() => this.showStats()}
+                        >
+                            STATS
+                        </Button>
+                    </Space>
+                    <Table
+                        pagination={false}
+                        dataSource={dataSource}
+                        columns={this.columns}
+                        rowKey={(_, index) => `${index}`}
+                        rowSelection={rowSelection}
+                        components={{
+                            body: {
+                                wrapper: (props: IProps) => this.DraggableContainer(props),
+                                row: (props: IProps) => this.DraggableBodyRow(props),
+                            },
+                        }}
+                        loading={dataLoading}
+                    />
                 </Space>
-                <Table
-                    pagination={false}
-                    dataSource={dataSource}
-                    columns={this.columns}
-                    rowKey={(_, index) => `${index}`}
-                    rowSelection={rowSelection}
-                    components={{
-                        body: {
-                            wrapper: (props: IProps) => this.DraggableContainer(props),
-                            row: (props: IProps) => this.DraggableBodyRow(props),
-                        },
-                    }}
-                    loading={dataLoading}
-                />
-            </Space>
+                <Drawer
+                    title="Stats"
+                    placement="right"
+                    closable={true}
+                    visible={drawerVisible}
+                    onClose={() => this.setState({ drawerVisible: false })}
+                >
+                    {
+                        statsLoading && <Spin />
+                    }
+                    {
+                        !statsLoading && <Space direction="vertical">
+                            <Statistic title="Min timing between events" value={stats?.timing?.min} suffix='ms' />
+                            <Statistic title="Max timing between events" value={stats?.timing?.max} suffix='ms' />
+                            <Statistic title="Avg timing between events" value={stats?.timing?.mean} suffix='ms' />
+                            <Statistic title="Total interaction time" value={stats?.total} suffix='ms' />
+                            <Statistic title="Longest sequence after input event" value={stats?.longestSequence} suffix='ms' />
+                            <Text strong>Interaction types:</Text>
+                            { Object.keys(stats?.counts || {}).map((item: string) => <Text>{item}: {stats?.counts[item]}</Text>) }
+                        </Space>
+                    }
+                </Drawer>
+            </>
         );
     }
 }
