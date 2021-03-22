@@ -2,7 +2,7 @@ import React from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { Table, Button, Typography, Space, Drawer, Statistic, Spin } from 'antd';
 import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
-import { MenuOutlined, CloseOutlined, DownloadOutlined, PieChartTwoTone, DownOutlined, UpOutlined, MediumOutlined } from '@ant-design/icons';
+import { MenuOutlined, CloseOutlined, DownloadOutlined, PieChartTwoTone } from '@ant-design/icons';
 import arrayMove from 'array-move';
 import ReactJson from 'react-json-view';
 import moment from 'moment';
@@ -143,9 +143,9 @@ class Home extends React.Component<IProps, IState> {
                         }
                     } = record;
                     return (
-                        <Space direction="vertical">
+                        <Space direction='vertical'>
                             <Text>{type}</Text>
-                            <Text type="secondary">{moment(time).format('L HH:mm:ss SSS')}</Text>
+                            <Text type='secondary'>{moment(time).format('L HH:mm:ss SSS')}</Text>
                         </Space>
                     );
                 },
@@ -156,7 +156,7 @@ class Home extends React.Component<IProps, IState> {
                 width: 430,
                 render: (setup: IRecord['setup']) => {
                     return (
-                        <Space direction="vertical">
+                        <Space direction='vertical'>
                             <Text>{setup?.xpath || setup?.url}</Text>
                             <ReactJson src={setup || {}} theme='rjv-default' collapsed={true} />
                         </Space>
@@ -205,8 +205,14 @@ class Home extends React.Component<IProps, IState> {
         this.setState({ selectedRowKeys: [], dataSource: newData });
     }
 
-    downloadJson(): void {
+    getDownloadJsonHref(): string {
+        const { dataSource } = this.state;
 
+        const json = JSON.stringify(dataSource);
+        const blob = new Blob([ json ],{ type: 'application/json' });
+        const href = URL.createObjectURL(blob);
+
+        return href;
     }
 
     showStats(): void {
@@ -263,13 +269,13 @@ class Home extends React.Component<IProps, IState> {
 
         return (
             <>
-                <Space direction="vertical">
-                    <Space direction="horizontal">
+                <Space direction='vertical'>
+                    <Space direction='horizontal'>
                         {
                             selectedRowKeys.length > 0 &&
                             <>
                                 <Button
-                                    type="text"
+                                    type='text'
                                     onClick={() => this.setState({ selectedRowKeys: [] })}
                                     icon={<CloseOutlined />}
                                 />
@@ -286,16 +292,17 @@ class Home extends React.Component<IProps, IState> {
                             !selectedRowKeys.length &&
                             <Text strong>{dataSource.length || 0} items</Text>
                         }
+                        <a href={this.getDownloadJsonHref()} download='task.recording.json'>
+                            <Button
+                                type='primary'
+                                icon={<DownloadOutlined />}
+                                loading={downloadLoading}
+                            >
+                                SAVE
+                            </Button>
+                        </a>
                         <Button
-                            type="primary"
-                            icon={<DownloadOutlined />}
-                            loading={downloadLoading}
-                            onClick={() => this.downloadJson()}
-                        >
-                            SAVE
-                        </Button>
-                        <Button
-                            type="primary"
+                            type='primary'
                             icon={<PieChartTwoTone />}
                             loading={downloadLoading}
                             onClick={() => this.showStats()}
@@ -319,8 +326,8 @@ class Home extends React.Component<IProps, IState> {
                     />
                 </Space>
                 <Drawer
-                    title="Stats"
-                    placement="right"
+                    title='Stats'
+                    placement='right'
                     closable={true}
                     visible={drawerVisible}
                     onClose={() => this.setState({ drawerVisible: false })}
@@ -329,12 +336,12 @@ class Home extends React.Component<IProps, IState> {
                         statsLoading && <Spin />
                     }
                     {
-                        !statsLoading && <Space direction="vertical">
-                            <Statistic title="Min timing between events" value={stats?.timing?.min} suffix='ms' />
-                            <Statistic title="Max timing between events" value={stats?.timing?.max} suffix='ms' />
-                            <Statistic title="Avg timing between events" value={stats?.timing?.mean} suffix='ms' />
-                            <Statistic title="Total interaction time" value={stats?.total} suffix='ms' />
-                            <Statistic title="Longest sequence after input event" value={stats?.longestSequence} suffix='ms' />
+                        !statsLoading && <Space direction='vertical'>
+                            <Statistic title='Min timing between events' value={stats?.timing?.min} suffix='ms' />
+                            <Statistic title='Max timing between events' value={stats?.timing?.max} suffix='ms' />
+                            <Statistic title='Avg timing between events' value={stats?.timing?.mean} suffix='ms' />
+                            <Statistic title='Total interaction time' value={stats?.total} suffix='ms' />
+                            <Statistic title='Longest sequence after input event' value={stats?.longestSequence} suffix='ms' />
                             <Text strong>Interaction types:</Text>
                             { Object.keys(stats?.counts || {}).map((item: string) => <Text>{item}: {stats?.counts[item]}</Text>) }
                         </Space>

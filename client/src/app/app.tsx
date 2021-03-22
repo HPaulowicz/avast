@@ -6,8 +6,6 @@ import {
     withRouter,
     RouteComponentProps,
 } from 'react-router-dom';
-import { Menu } from 'antd';
-import { MenuOutlined, CloseOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import NotFound from './views/NotFound';
 import Home from './views/Home';
